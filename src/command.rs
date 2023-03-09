@@ -9,6 +9,17 @@ pub fn nick_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
     }
 
     let new_name = args[0].to_string().clone();
+
+    // Check if name is taken
+    for c in get_ctx!(ctx).iter() {
+        if !get_ctx!(c).name.eq(&new_name.clone()) {
+            continue;
+        }
+
+        get_ctx!(client).send_server(format!("Name \u{001b}[1m{}\u{001b}[0m is already taken", new_name.clone()), true);
+        return;
+    }
+
     get_ctx!(client).name = new_name.clone();
     
     // Notify everyon else
