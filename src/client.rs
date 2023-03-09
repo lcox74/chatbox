@@ -23,9 +23,9 @@ impl Client {
         let time_str = format!("[{:0>2}\u{001b}[34;1m:\u{001b}[0m{:0>2}]", dt.hour(), dt.minute());
 
         if reset_line {
-            self.conn.as_ref().write_all(format!("\u{001b}[F{} | {}", time_str, msg).as_bytes()).unwrap();
+            self.conn.as_ref().write_all(format!("\r\u{001b}[F{} | {}", time_str, msg).as_bytes()).unwrap();
         } else {
-            self.conn.as_ref().write_all(format!("{} | {}", time_str, msg).as_bytes()).unwrap();
+            self.conn.as_ref().write_all(format!("\r{} | {}", time_str, msg).as_bytes()).unwrap();
         }
     }
 
