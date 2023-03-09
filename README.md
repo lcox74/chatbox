@@ -17,3 +17,5 @@ application will support several user commands which will be documented below.
 - `/privmsg <user_nickname> <msg>`: Users can send private messages to each other using this command.
 
 - `/color <color_id>`: This command enables users to change the color of their display name. The `color_id` parameter should be a number between `0` and `255`.
+
+- `/list`: This command will list all the active users on the chat server.
