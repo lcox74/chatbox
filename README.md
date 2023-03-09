@@ -1,6 +1,8 @@
 # Chatbox
 > 9th March 2023
 
+![example image](res/example.png)
+
 In response to numerous suggestions, I have decided to explore the use of Rust
 programming language. The goal of this project is to create a chat application
 that deviates from the traditional approach by not having a dedicated client.
