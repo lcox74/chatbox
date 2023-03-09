@@ -37,22 +37,30 @@ pub fn privmsg_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>)
 
     let target_user = args[0].to_string().clone();
     let mut target_color: u8 = 255;
-    let message = format!("\u{001b}[38;5;245m{}\u{001b}[0m\n\r", args[1..].join(" ")) ;
+    let message = format!("\u{001b}[3m\u{001b}[38;5;245m{}\u{001b}[0m\n\r", args[1..].join(" ")) ;
     
+    let mut found = false;
+
     // Find target user
     for c in get_ctx!(ctx).iter() {
         if !get_ctx!(c).name.eq(&target_user.clone()) {
             continue;
         }
-
+        found = true;
         target_color = get_ctx!(c).color.clone();
 
         // Send message to target
         get_ctx!(c).send_msg(src_name.clone(), src_color.clone(), message.clone());
     }
 
-    // Send message to self
-    get_ctx!(client).send_self_priv(target_user.clone(), target_color.clone(), message.clone());
+    if found {
+        // Send message to self
+        get_ctx!(client).send_self_priv(target_user.clone(), target_color.clone(), message.clone());
+    } else {
+        // Send message to self
+        get_ctx!(client).send_server(format!("User \u{001b}[1m{}\u{001b}[0m not found", target_user.clone()), true);
+    }
+
 }
 
 pub fn color_cmd(client: SharedClient, args: Vec<&str>) {
