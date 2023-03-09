@@ -2,6 +2,12 @@ use crate::{types::{*}, get_ctx};
 
 pub fn nick_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
     let old_name = get_ctx!(client).name.clone();
+
+    if args.len() != 2 {
+        get_ctx!(client).send_server("Usage: /nick <new name>".to_string(), true);
+        return;
+    }
+
     let new_name = args[0].to_string().clone();
     get_ctx!(client).name = new_name.clone();
     
@@ -23,6 +29,12 @@ pub fn nick_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
 pub fn privmsg_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
     let src_name = get_ctx!(client).name.clone();
     let src_color = get_ctx!(client).color.clone();
+
+    if args.len() < 3 {
+        get_ctx!(client).send_server("Usage: /privmsg <user> <message>".to_string(), true);
+        return;
+    }
+
     let target_user = args[0].to_string().clone();
     let mut target_color: u8 = 255;
     let message = format!("\u{001b}[38;5;245m{}\u{001b}[0m\n\r", args[1..].join(" ")) ;
@@ -44,15 +56,27 @@ pub fn privmsg_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>)
 }
 
 pub fn color_cmd(client: SharedClient, args: Vec<&str>) {
-    let new_color = args[0].to_string().clone().parse::<u8>().unwrap();
-    let client_name = get_ctx!(client).name.clone();
-    get_ctx!(client).color = new_color;
-    
-    // Send a message to you
-    get_ctx!(client).send_server(format!("You will now be displayed as \u{001b}[1m\u{001b}[38;5;{}m{}\u{001b}[0m ", new_color.clone(), client_name.clone()), true);
+    if args.len() != 2 {
+        get_ctx!(client).send_server("Usage: /color <0-255>".to_string(), true);
+        return;
+    }
+
+    match args[0].to_string().clone().parse::<u8>() {
+        Ok(val) => {
+            let client_name = get_ctx!(client).name.clone();
+            get_ctx!(client).color = val;
+            
+            // Send a message to you
+            get_ctx!(client).send_server(format!("You will now be displayed as \u{001b}[1m\u{001b}[38;5;{}m{}\u{001b}[0m ", val.clone(), client_name.clone()), true);
+        },
+        Err(_) => {
+            get_ctx!(client).send_server("Usage: /color <0-255>".to_string(), true);
+            return;
+        }
+    }    
 }
 
-pub fn list_cmd(ctx: SharedClientList, client: SharedClient) {
+pub fn list_cmd(ctx: SharedClientList, client: SharedClient, reqcmd: bool) {
     let mut client_list = String::new();
     for c in get_ctx!(ctx).iter() {
         let name = get_ctx!(c).name.clone();
@@ -62,7 +86,7 @@ pub fn list_cmd(ctx: SharedClientList, client: SharedClient) {
     }
 
     // Send a message to you
-    get_ctx!(client).send_server(format!("Connected users: {}", client_list), true);
+    get_ctx!(client).send_server(format!("Connected users: {}", client_list), reqcmd);
 }
 
 pub fn send_join_msg(ctx: SharedClientList, client_name: String) {

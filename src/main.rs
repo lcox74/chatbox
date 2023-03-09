@@ -59,6 +59,9 @@ fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStr
     get_ctx!(client).send_server("Welcome to the \u{001b}[4mChatbox Server\u{001b}[0m!".to_string(), false);
     get_ctx!(client).send_server(format!("Your name is \u{001b}[1m{}\u{001b}[0m, feel free to change it", client_name.clone()), false);
 
+    // List connected users
+    command::list_cmd(ctx.clone(), client.clone(), false);
+
     // Send message to all clients
     command::send_join_msg(ctx.clone(), client_name.clone());
 
@@ -79,6 +82,7 @@ fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStr
 
                     // Send message to all clients
                     command::send_leave_msg(ctx.clone(), client_name.clone(), client_color.clone());
+                    println!("Closed connection: {}", stream.as_ref().peer_addr().unwrap());
 
                     break;
                 }
@@ -98,6 +102,7 @@ fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStr
 
                 // Send message to all clients
                 command::send_leave_msg(ctx.clone(), client_name.clone(), client_color.clone());
+                println!("Closed connection: {}", stream.as_ref().peer_addr().unwrap());
 
                 break;
             }
@@ -115,7 +120,7 @@ fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStr
                 "/NICK" => command::nick_cmd(ctx.clone(), client.clone(), args[1..].to_vec()),
                 "/PRIVMSG" => command::privmsg_cmd(ctx.clone(), client.clone(), args[1..].to_vec()),
                 "/COLOR" => command::color_cmd(client.clone(), args[1..].to_vec()),
-                "/LIST" => command::list_cmd(ctx.clone(), client.clone()),
+                "/LIST" => command::list_cmd(ctx.clone(), client.clone(), true),
                 _ => {
                     get_ctx!(client).send_server(format!("Unknown command: {}", command), true);
                 }
