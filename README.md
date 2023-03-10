@@ -12,6 +12,27 @@ The project initially offers a single channel, namely #general, although
 additional channels may be added in the future if deemed necessary. The
 application will support several user commands which will be documented below.
 
+## Usage
+
+To join a server to chat all you need to run is: `nc <server> 3000` and you can start
+chatting. There is a live server at `chatbox.lachlancox.dev` that can be used to test.
+
+If you want to load default user settings you can create a file and put in commands that
+will run on first connection.
+
+`user_setup`
+```
+/color 50
+/nick Ben
+Hello, World!
+```
+
+Then you can load it by running:
+
+```
+cat user_setup - | nc chatbox.lachlancox.dev 3000
+```
+
 ## Commands
 
 - `/nick <user_nickname>`: This command allows the user to set their desired nickname.

@@ -1,9 +1,23 @@
 use crate::{types::{*}, get_ctx};
 
+/// Change the user's name. The new name must be unique. Other users will be
+/// notified of the change.
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - The client list
+/// * `client` - The client that sent the command
+/// * `args` - The arguments passed to the command
+/// 
+/// # Example
+/// 
+/// ```
+/// nick_cmd(ctx, client, vec!["new_name"]);
+/// ```
 pub fn nick_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
     let old_name = get_ctx!(client).name.clone();
 
-    if args.len() != 2 {
+    if args.len() != 1 {
         get_ctx!(client).send_server("Usage: /nick <new name>".to_string(), true);
         return;
     }
@@ -35,13 +49,30 @@ pub fn nick_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
 
     // Send a message to you
     get_ctx!(client).send_server(format!("Changed name from \u{001b}[1m{}\u{001b}[0m to \u{001b}[1m{}\u{001b}[0m", old_name, new_name.clone()), true);
+
+    println!("{} | \u{001b}[1m{}\u{001b}[0m changed their name to \u{001b}[1m{}\u{001b}[0m", crate::types::get_timestamp(), old_name, new_name);
+
 }
 
+/// Send a private message to a user. The arguments are concatenated into a single
+/// message after the target user name.
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - The client list
+/// * `client` - The client that sent the command
+/// * `args` - The arguments passed to the command
+/// 
+/// # Example
+/// 
+/// ```
+/// privmsg_cmd(ctx, client, vec!["user", "message", "here", "and", "here"]);
+/// ```
 pub fn privmsg_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>) {
     let src_name = get_ctx!(client).name.clone();
     let src_color = get_ctx!(client).color.clone();
 
-    if args.len() < 3 {
+    if args.len() < 2 {
         get_ctx!(client).send_server("Usage: /privmsg <user> <message>".to_string(), true);
         return;
     }
@@ -74,8 +105,25 @@ pub fn privmsg_cmd(ctx: SharedClientList, client: SharedClient, args: Vec<&str>)
 
 }
 
+/// Change the color of a client. This only changes how the client is
+/// displayed to other clients. Other clients wont be notified of the
+/// change.
+/// 
+/// The colour is a number between 0 and 255. The number is the ANSI
+/// color code.
+/// 
+/// # Arguments
+/// 
+/// * `client` - The client that sent the command
+/// * `args` - The arguments of the command
+/// 
+/// # Example
+/// 
+/// ```
+/// color_cmd(client, vec!["255"]);
+/// ```
 pub fn color_cmd(client: SharedClient, args: Vec<&str>) {
-    if args.len() != 2 {
+    if args.len() != 1 {
         get_ctx!(client).send_server("Usage: /color <0-255>".to_string(), true);
         return;
     }
@@ -95,6 +143,19 @@ pub fn color_cmd(client: SharedClient, args: Vec<&str>) {
     }    
 }
 
+/// List all connected clients.
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - All the clients in the server
+/// * `client` - The client that sent the command
+/// * `reqcmd` - If the command was sent by the client
+/// 
+/// # Example
+/// 
+/// ```
+/// list_cmd(ctx, client, true);
+/// ```
 pub fn list_cmd(ctx: SharedClientList, client: SharedClient, reqcmd: bool) {
     let mut client_list = String::new();
     for c in get_ctx!(ctx).iter() {
@@ -108,6 +169,18 @@ pub fn list_cmd(ctx: SharedClientList, client: SharedClient, reqcmd: bool) {
     get_ctx!(client).send_server(format!("Connected users: {}", client_list), reqcmd);
 }
 
+/// Send a join message to all clients from a client.
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - All the clients in the server
+/// * `client_name` - The name of the client that joined
+/// 
+/// # Example
+/// 
+/// ```
+/// send_join_msg(ctx, "John Doe".to_string());
+/// ```
 pub fn send_join_msg(ctx: SharedClientList, client_name: String) {
     for c in get_ctx!(ctx).iter() {
         // Don't send to self
@@ -120,6 +193,20 @@ pub fn send_join_msg(ctx: SharedClientList, client_name: String) {
     }
 }
 
+/// Send a regular message to all clients from a client. The sending client
+/// will recieve a copy of the message from "You".
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - All the clients in the server
+/// * `client` - The client the message is sent from
+/// * `message` - Message to send
+/// 
+/// # Example
+/// 
+/// ```
+/// send_normal_msg(ctx, client, "Hello World!".to_string());
+/// ```
 pub fn send_normal_msg(ctx: SharedClientList, client: SharedClient, message: String) {
     let src_name = get_ctx!(client).name.clone();
     let src_color = get_ctx!(client).color.clone();
@@ -139,6 +226,20 @@ pub fn send_normal_msg(ctx: SharedClientList, client: SharedClient, message: Str
     get_ctx!(client).send_self(message.clone());
 }
 
+
+/// Send a message to all clients when a client leaves
+/// 
+/// # Arguments
+/// 
+/// * `ctx` - SharedClientList
+/// * `client_name` - Name of client leaving
+/// * `client_color` - A reference to the color of the client leaving 
+/// 
+/// # Example
+/// 
+/// ```
+/// send_leave_msg(ctx, "coxy".to_string(), 50);
+/// ```
 pub fn send_leave_msg(ctx: SharedClientList, client_name: String, client_color: u8) {
     for c in get_ctx!(ctx).iter() {
         // Don't send to self
@@ -147,6 +248,6 @@ pub fn send_leave_msg(ctx: SharedClientList, client_name: String, client_color: 
         }
 
         // Send message
-        get_ctx!(c).send_server(format!("\u{001b}[1m\u{001b}[38;5;{}m{}\u{001b}[0m has left the chat\n\r", client_color.clone(), client_name.clone()), false);
+        get_ctx!(c).send_server(format!("\u{001b}[1m\u{001b}[38;5;{}m{}\u{001b}[0m has left the chat", client_color.clone(), client_name.clone()), false);
     }
 }

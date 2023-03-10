@@ -4,7 +4,7 @@ use std::{net::{TcpListener, TcpStream}, sync::{Arc, Mutex}, io::Read};
 pub mod client;
 pub mod command;
 pub mod types;
-use types::{SharedClient, SharedClientList};
+use types::{SharedClient, SharedClientList, get_timestamp};
 
 
 const HOST : &str = "0.0.0.0:3000";
@@ -22,8 +22,6 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                println!("New connection: {}", stream.peer_addr().unwrap());
-
                 // Clone the Arc pointer to the clients vector
                 let copy_clients = Arc::clone(&shared_clients);
 
@@ -54,6 +52,7 @@ fn main() {
 fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStream>) { 
 
     let client_name = get_ctx!(client).name.clone();
+    println!("{} | \u{001b}[1m{}({})\u{001b}[0m joined the server", get_timestamp(), client_name.clone(), stream.peer_addr().unwrap());
 
     // Send welcome
     get_ctx!(client).send_server("Welcome to the \u{001b}[4mChatbox Server\u{001b}[0m!".to_string(), false);
@@ -82,7 +81,7 @@ fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStr
 
                     // Send message to all clients
                     command::send_leave_msg(ctx.clone(), client_name.clone(), client_color.clone());
-                    println!("Closed connection: {}", stream.as_ref().peer_addr().unwrap());
+                    println!("{} | \u{001b}[1m{}({})\u{001b}[0m left the server", get_timestamp(), client_name.clone(), stream.peer_addr().unwrap());
 
                     break;
                 }
@@ -102,31 +101,40 @@ fn handle_client(ctx: SharedClientList, client: SharedClient, stream: Arc<TcpStr
 
                 // Send message to all clients
                 command::send_leave_msg(ctx.clone(), client_name.clone(), client_color.clone());
-                println!("Closed connection: {}", stream.as_ref().peer_addr().unwrap());
+                println!("{} | \u{001b}[1m{}({})\u{001b}[0m left the server", get_timestamp(), client_name.clone(), stream.peer_addr().unwrap());
 
                 break;
             }
         }
         let message = String::from_utf8_lossy(&buffer[..]).trim().to_string();
-        
-        // Check if message is a command where the first character is a '/'
-        if message.clone().starts_with("/") {
-            // Extract from Message
-            let args: Vec<&str> = message.split_whitespace().collect();
-            let command = args[0].to_uppercase();
+        let messages: Vec<&str> = message.split("\n").collect();
 
-            // Handle command
-            match command.as_str() {
-                "/NICK" => command::nick_cmd(ctx.clone(), client.clone(), args[1..].to_vec()),
-                "/PRIVMSG" => command::privmsg_cmd(ctx.clone(), client.clone(), args[1..].to_vec()),
-                "/COLOR" => command::color_cmd(client.clone(), args[1..].to_vec()),
-                "/LIST" => command::list_cmd(ctx.clone(), client.clone(), true),
-                _ => {
-                    get_ctx!(client).send_server(format!("Unknown command: {}", command), true);
+        // Process multiple commands or messages
+        for msg in messages {
+            if msg.len() > 0 {
+                // Check if message is a command where the first character is a '/'
+                if msg.clone().starts_with("/") {
+                    // Extract from Message
+                    let args: Vec<&str> = msg.split_whitespace().collect();
+                    let command = args[0].to_uppercase();
+        
+                    // Handle command
+                    match command.as_str() {
+                        "/NICK" => command::nick_cmd(ctx.clone(), client.clone(), args[1..].to_vec()),
+                        "/PRIVMSG" => command::privmsg_cmd(ctx.clone(), client.clone(), args[1..].to_vec()),
+                        "/COLOR" => command::color_cmd(client.clone(), args[1..].to_vec()),
+                        "/LIST" => command::list_cmd(ctx.clone(), client.clone(), true),
+                        _ => {
+                            get_ctx!(client).send_server(format!("Unknown command: {}", command), true);
+                        }
+                    }
+                } else if msg.as_bytes()[0] != 0 {
+                    command::send_normal_msg(ctx.clone(), client.clone(), msg.to_string());
+                } else {
+                    // NOP
                 }
             }
-        } else {
-            command::send_normal_msg(ctx.clone(), client.clone(), message.clone());
         }
+        
     }
 }
