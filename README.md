@@ -15,7 +15,7 @@ application will support several user commands which will be documented below.
 ## Usage
 
 To join a server to chat all you need to run is: `nc <server> 3000` and you can start
-chatting. There is a live server at `chatbox.lachlancox.dev` that can be used to test.
+chatting.
 
 If you want to load default user settings you can create a file and put in commands that
 will run on first connection.
@@ -30,7 +30,7 @@ Hello, World!
 Then you can load it by running:
 
 ```
-cat user_setup - | nc chatbox.lachlancox.dev 3000
+cat user_setup - | nc <target-server> 3000
 ```
 
 ## Commands
